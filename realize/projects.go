@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"log"
 	"math/big"
 	"os"
@@ -12,12 +13,11 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
 )
 
 var (
@@ -578,8 +578,15 @@ func (p *Project) run(path string, stream chan Response, stop <-chan bool) (err 
 		// https://github.com/golang/go/issues/5615
 		// https://github.com/golang/go/issues/6720
 		if build != nil {
-			build.Process.Signal(os.Interrupt)
-			build.Process.Wait()
+			// build.Process.Signal(os.Interrupt)
+			// build.Process.Wait()
+			if runtime.GOOS == "windows" {
+				build.Process.Kill()
+				build.Process.Wait()
+			} else {
+				build.Process.Signal(os.Interrupt)
+				build.Process.Wait()
+			}
 		}
 	}()
 
